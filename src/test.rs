@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use crate::testutils::{register_test_contract, CommitRevealContract};
-//use crate::token::{self, TokenMetadata};
+use crate::token::{self, TokenMetadata};
 use rand::{thread_rng, RngCore};
 use soroban_auth::{Identifier, Signature};
 use soroban_sdk::{
@@ -13,9 +13,15 @@ fn generate_contract_id() -> [u8; 32] {
     thread_rng().fill_bytes(&mut id);
     id
 }
-/*
+
 fn create_token_contract(e: &Env, admin: &AccountId) -> ([u8; 32], token::Client) {
-    let id = e.register_contract_token(None);
+    let id = e.register_contract_token(&BytesN::from_array(
+        e,
+        &[
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ],
+    ));
     let token = token::Client::new(e, &id);
     // decimals, name, symbol don't matter in tests
     token.init(
@@ -28,22 +34,11 @@ fn create_token_contract(e: &Env, admin: &AccountId) -> ([u8; 32], token::Client
     );
     (id.into(), token)
 }
-*/
 
-fn create_contract(
-    e: &Env,
-    admin: &AccountId,
-    hash: BytesN<32>,
-) -> ([u8; 32], CommitRevealContract) {
+fn create_contract(e: &Env, hash: BytesN<32>) -> ([u8; 32], CommitRevealContract) {
     let id = generate_contract_id();
-    register_test_contract(&e, &id);
+    register_test_contract(e, &id);
     let contract = CommitRevealContract::new(e, &id);
-    /*
-
-    contract initialization
-
-     */
-
     contract.initialize(&hash);
 
     (id, contract)
@@ -56,19 +51,24 @@ fn test() {
 
     // two users for testing
     let user1 = e.accounts().generate();
-    let user2 = e.accounts().generate();
     let user1_id = Identifier::Account(user1.clone());
-    let user2_id = Identifier::Account(user2.clone());
 
-    //    let (contract1, usdc_token) = create_token_contract(&e, &admin1); // registered and initialized the usdc token contract
+    let (_contract1, usdc_token) = create_token_contract(&e, &admin); // registered and initialized the usdc token contract
 
     let image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
     let hash = e.compute_hash_sha256(&image);
 
-    let (contract_arr_id, contract) = create_contract(&e, &user1, hash);
+    let (contract_arr_id, contract) = create_contract(&e, hash);
 
     let contract_id = Identifier::Contract(BytesN::from_array(&e, &contract_arr_id));
     // the id of the contract
+
+    usdc_token.with_source_account(&admin).mint(
+        &Signature::Invoker,
+        &BigInt::zero(&e),
+        &contract_id,
+        &BigInt::from_u32(&e, 1000),
+    );
 
     let user1_address = Address::Account(user1.clone());
     let mut commit_image = Bytes::new(&e);
@@ -87,7 +87,10 @@ fn test() {
         user1,
         &Bytes::from_slice(&e, "soroban is awesome".as_bytes()),
         &Bytes::from_slice(&e, "mysecret".as_bytes()),
-    )
+    );
+
+    assert_eq!(usdc_token.balance(&contract_id), 900);
+    assert_eq!(usdc_token.balance(&user1_id), 100);
 }
 
 #[test]
@@ -98,19 +101,23 @@ fn test_wrong_solution() {
 
     // two users for testing
     let user1 = e.accounts().generate();
-    let user2 = e.accounts().generate();
-    let user1_id = Identifier::Account(user1.clone());
-    let user2_id = Identifier::Account(user2.clone());
 
-    //    let (contract1, usdc_token) = create_token_contract(&e, &admin1); // registered and initialized the usdc token contract
+    let (_contract1, usdc_token) = create_token_contract(&e, &admin); // registered and initialized the usdc token contract
 
     let image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
     let hash = e.compute_hash_sha256(&image);
 
-    let (contract_arr_id, contract) = create_contract(&e, &user1, hash);
+    let (contract_arr_id, contract) = create_contract(&e, hash);
 
     let contract_id = Identifier::Contract(BytesN::from_array(&e, &contract_arr_id));
     // the id of the contract
+
+    usdc_token.with_source_account(&admin).mint(
+        &Signature::Invoker,
+        &BigInt::zero(&e),
+        &contract_id,
+        &BigInt::from_u32(&e, 1000),
+    );
 
     let user1_address = Address::Account(user1.clone());
     let mut commit_image = Bytes::new(&e);
@@ -141,18 +148,23 @@ fn test_front_run() {
     // two users for testing
     let user1 = e.accounts().generate();
     let user2 = e.accounts().generate();
-    let user1_id = Identifier::Account(user1.clone());
-    let user2_id = Identifier::Account(user2.clone());
 
-    //    let (contract1, usdc_token) = create_token_contract(&e, &admin1); // registered and initialized the usdc token contract
+    let (_contract1, usdc_token) = create_token_contract(&e, &admin); // registered and initialized the usdc token contract
 
     let image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
     let hash = e.compute_hash_sha256(&image);
 
-    let (contract_arr_id, contract) = create_contract(&e, &user1, hash);
+    let (contract_arr_id, contract) = create_contract(&e, hash);
 
     let contract_id = Identifier::Contract(BytesN::from_array(&e, &contract_arr_id));
     // the id of the contract
+
+    usdc_token.with_source_account(&admin).mint(
+        &Signature::Invoker,
+        &BigInt::zero(&e),
+        &contract_id,
+        &BigInt::from_u32(&e, 1000),
+    );
 
     let user1_address = Address::Account(user1.clone());
     let mut commit_image = Bytes::new(&e);

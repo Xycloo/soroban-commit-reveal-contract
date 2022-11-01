@@ -8,8 +8,7 @@ pub mod testutils;
 
 use soroban_auth::Identifier;
 use soroban_sdk::{
-    bigint, contractimpl, contracttype, serde::Serialize, symbol, Address, BigInt, Bytes, BytesN,
-    Env, Symbol,
+    bigint, contractimpl, contracttype, serde::Serialize, Address, BigInt, Bytes, BytesN, Env,
 };
 
 mod token {
@@ -105,12 +104,20 @@ impl CommitRevealContractTrait for CommitRevealContract {
     }
 
     fn check(e: Env, guess: Bytes, secret: Bytes) {
-        let commit = get_commit(&e, e.invoker());
+        let invoker = e.invoker();
+        let invoker_id: Identifier;
+        let commit = get_commit(&e, invoker.clone());
 
         let mut rhs = Bytes::new(&e);
-        match e.invoker() {
-            Address::Account(a) => rhs.append(&a.serialize(&e)),
-            Address::Contract(a) => rhs.append(&a.into()), // why not support contracts that play the game :-)
+        match invoker {
+            Address::Account(a) => {
+                rhs.append(&a.clone().serialize(&e));
+                invoker_id = Identifier::Account(a)
+            }
+            Address::Contract(a) => {
+                rhs.append(&a.clone().into());
+                invoker_id = Identifier::Contract(a)
+            } // why not support contracts that play the game :-)
         }
 
         rhs.append(&guess);
@@ -124,5 +131,7 @@ impl CommitRevealContractTrait for CommitRevealContract {
         if e.compute_hash_sha256(&guess) != get_hash(&e) {
             panic!("wrong solution")
         }
+
+        send_reward(&e, invoker_id);
     }
 }

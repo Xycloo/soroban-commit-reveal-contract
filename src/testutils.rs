@@ -1,9 +1,8 @@
 #![cfg(any(test, feature = "testutils"))]
 
 use crate::CommitRevealContractClient;
-use soroban_auth::Identifier;
 
-use soroban_sdk::{AccountId, BigInt, Bytes, BytesN, Env};
+use soroban_sdk::{AccountId, Bytes, BytesN, Env};
 
 pub fn register_test_contract(e: &Env, contract_id: &[u8; 32]) {
     let contract_id = BytesN::from_array(e, contract_id);
