@@ -55,8 +55,8 @@ fn test() {
 
     let (_contract1, usdc_token) = create_token_contract(&e, &admin); // registered and initialized the usdc token contract
 
-    let image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
-    let hash = e.compute_hash_sha256(&image);
+    let pre_image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
+    let hash = e.compute_hash_sha256(&pre_image);
 
     let (contract_arr_id, contract) = create_contract(&e, hash);
 
@@ -104,8 +104,8 @@ fn test_wrong_solution() {
 
     let (_contract1, usdc_token) = create_token_contract(&e, &admin); // registered and initialized the usdc token contract
 
-    let image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
-    let hash = e.compute_hash_sha256(&image);
+    let pre_image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
+    let hash = e.compute_hash_sha256(&pre_image);
 
     let (contract_arr_id, contract) = create_contract(&e, hash);
 
@@ -151,8 +151,8 @@ fn test_front_run() {
 
     let (_contract1, usdc_token) = create_token_contract(&e, &admin); // registered and initialized the usdc token contract
 
-    let image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
-    let hash = e.compute_hash_sha256(&image);
+    let pre_image = Bytes::from_slice(&e, "soroban is awesome".as_bytes());
+    let hash = e.compute_hash_sha256(&pre_image);
 
     let (contract_arr_id, contract) = create_contract(&e, hash);
 
