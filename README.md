@@ -16,7 +16,7 @@ By hiding the solution with the commit-reveal scheme, and revealing it relying o
 
 The contract offers three methods.
 
-#### initialize()
+#### initialize(e: Env, hash: BytesN<32>)
 Starts the game by setting the satus, and putting the image of the hash function:
 
 ```rust
@@ -30,7 +30,7 @@ fn initialize(e: Env, hash: BytesN<32>) {
     }
 ```
 
-#### commit()
+#### commit(e: Env, val: BytesN<32>)
 Used to submit the initial commitment. Simply checks if the game has started (i.e contract initialized), and then puts the commitment in the `DataKey::Commit(Address)` data entry:
 
 ```rust
@@ -43,7 +43,7 @@ fn commit(e: Env, val: BytesN<32>) {
     }
 ```
 
-#### check()
+#### check(e: Env, guess: Bytes, secret: Bytes)
 This is where most things happen:
 1. The contract receives the solution and the secret used in the initial commitment
 2. re-creates the initial commitment with the two supplied params and `env.invoker()`
@@ -86,7 +86,7 @@ fn check(e: Env, guess: Bytes, secret: Bytes) {
 ```
 
 ## Testing
-The tests should be quite straightforward if you've taken a look at soroban before:
+The tests should be quite straightforward if you've taken a look at soroban before. The test includes three simulations where two should panic since one attempts to front-run and the other holds a wrong solution:
 
 ```bash
 ❯ cargo test                     
